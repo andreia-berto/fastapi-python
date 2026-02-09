@@ -2,7 +2,6 @@ from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 class EnvConfig(BaseSettings):
     ENV_STATE: str
 
@@ -10,9 +9,10 @@ class EnvConfig(BaseSettings):
 
 
 class GlobalConfig(BaseSettings):
+    SECRET_KEY: str
+    ALGORITHM:str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
     DATABASE_URL: str
-    DB_FORCE_ROLL_BACK: bool
-
 
 class DevConfig(GlobalConfig):
     model_config = SettingsConfigDict(env_file=".env.dev")

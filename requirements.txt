@@ -10,4 +10,7 @@ python-json-logger
 #logtail-python
 python-jose
 python-multipart
-passlib[bcrypt]
+passlib[argon2]
+pydantic
+pytest
+httpx

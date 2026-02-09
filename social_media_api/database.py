@@ -45,6 +45,5 @@ def get_engine() -> sqlalchemy.Engine:
 @lru_cache()
 def get_database() -> databases.Database:
     return databases.Database(
-        settings.DATABASE_URL,
-        force_rollback=settings.DB_FORCE_ROLL_BACK,
+        settings.DATABASE_URL
     )
