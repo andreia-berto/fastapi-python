@@ -2,9 +2,10 @@ from datetime import datetime, timezone,  timedelta
 import logging
 from http import HTTPStatus
 
-from fastapi import HTTPException
-from jose import jwt
+from fastapi import HTTPException, status
+from jose import jwt, ExpiredSignatureError, JWTError
 from passlib.context import CryptContext
+from rich import status
 
 from social_media_api.config import get_settings
 from social_media_api.database import get_database, user_table
@@ -22,12 +23,12 @@ pwd_context = CryptContext(
 credentials_exception = HTTPException( status_code=HTTPStatus.UNAUTHORIZED, detail="Could not validate credentials",)
 
 
-def access_token_expire_minute() -> int:
+def access_token_expire_minutes() -> int:
     return int(get_settings().ACCESS_TOKEN_EXPIRE_MINUTES)
 
 def create_access_token(email: str):
     logger.debug("Creating access token", extra={"email": email})
-    expire = datetime.now(timezone.utc) + timedelta(minutes=access_token_expire_minute())
+    expire = datetime.now(timezone.utc) + timedelta(minutes=access_token_expire_minutes())
     jwt_data = {"sub": email, "exp": expire}
     encoded_jwt = jwt.encode(jwt_data, key=SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -55,3 +56,23 @@ async def authenticate_user(email: str, password: str):
         raise credentials_exception
 
     return user
+
+async def get_current_user(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except ExpiredSignatureError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from e
+    except JWTError as e:
+        raise credentials_exception from e
+
+    use = await get_user(email=email)
+    if not use:
+        raise credentials_exception
+    return use
