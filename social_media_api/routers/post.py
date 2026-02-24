@@ -1,6 +1,8 @@
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter, HTTPException
+from fastapi.params import Depends
 
 from social_media_api.database import comment_table, get_database, post_table
 from social_media_api.model.post import (
@@ -10,6 +12,8 @@ from social_media_api.model.post import (
     UserPostin,
     UserPostWithComments,
 )
+from social_media_api.model.user import User
+from social_media_api.security import get_current_user
 
 router = APIRouter()
 database = get_database()
@@ -18,10 +22,12 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/post", response_model=UserPost, status_code=201)
-async def creat_post(post: UserPostin):
+async def creat_post(
+    post: UserPostin, current_user: Annotated[User, Depends(get_current_user)]
+):
     logger.info("Creating post")
 
-    data = post.__dict__
+    data = {**post.__dict__, "user_id": current_user.id}
     query = post_table.insert().values(data)
 
     logger.debug(query)
@@ -52,14 +58,16 @@ async def find_post(post_id: int):
 
 
 @router.post("/comment", response_model=Comment, status_code=201)
-async def creat_comment(comment: CommentIn):
+async def creat_comment(
+    comment: CommentIn, current_user: Annotated[User, Depends(get_current_user)]
+):
     logger.info("Creating comment")
 
     post = await find_post(comment.post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
 
-    data = comment.__dict__
+    data = {**comment.__dict__, "user_id": current_user.id}
     query = comment_table.insert().values(data)
 
     logger.debug(query)

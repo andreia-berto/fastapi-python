@@ -15,6 +15,7 @@ os.environ["ENV_STATE"] = "test"
 def anyio_backend():
     return "asyncio"
 
+
 @pytest.fixture(scope="session")
 def setup_test_db():
     engine = get_engine()
@@ -57,3 +58,11 @@ async def registered_user_fixture(async_client) -> dict:
     user = await get_database().fetch_one(query)
     user_details["id"] = user.id
     return user_details
+
+
+@pytest.fixture()
+async def logged_in_token(
+    async_client: AsyncClient, registered_user_fixture: dict
+) -> str:
+    response = await async_client.post("/login", json=registered_user_fixture)
+    return response.json()["access_token"]

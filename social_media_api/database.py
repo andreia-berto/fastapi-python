@@ -1,3 +1,4 @@
+import uuid
 from functools import lru_cache
 
 import databases
@@ -14,6 +15,7 @@ post_table = sqlalchemy.Table(
     metadata,
     sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
     sqlalchemy.Column("body", sqlalchemy.String),
+    sqlalchemy.Column("user_id", sqlalchemy.ForeignKey("users.id"), nullable=False),
 )
 
 
@@ -28,9 +30,12 @@ comment_table = sqlalchemy.Table(
 user_table = sqlalchemy.Table(
     "users",
     metadata,
-    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+    sqlalchemy.Column(
+        "id", sqlalchemy.Integer, primary_key=True, default=lambda: str(uuid.uuid4())
+    ),
     sqlalchemy.Column("email", sqlalchemy.String, unique=True),
     sqlalchemy.Column("password", sqlalchemy.String),
+    sqlalchemy.Column("user_id", sqlalchemy.ForeignKey("users.id"), nullable=False),
 )
 
 
@@ -44,6 +49,4 @@ def get_engine() -> sqlalchemy.Engine:
 
 @lru_cache()
 def get_database() -> databases.Database:
-    return databases.Database(
-        settings.DATABASE_URL
-    )
+    return databases.Database(settings.DATABASE_URL)

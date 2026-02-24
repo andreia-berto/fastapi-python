@@ -14,3 +14,4 @@ passlib[argon2]
 pydantic
 pytest
 httpx
+typing-extensions

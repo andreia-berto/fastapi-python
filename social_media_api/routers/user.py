@@ -1,4 +1,5 @@
 import logging
+import uuid
 
 from fastapi import APIRouter, HTTPException, status
 
@@ -16,13 +17,20 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_user(user: UserIn):
     if await get_user(user.email):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User already exists")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="User already exists"
+        )
+
+    user_id = str(uuid.uuid4())
 
     hashed_password = get_password_hash(user.password)
-    query = user_table.insert().values(email=user.email, password=hashed_password)
+    query = user_table.insert().values(
+        user_id=user_id, email=user.email, password=hashed_password
+    )
 
     logger.debug(query)
 
